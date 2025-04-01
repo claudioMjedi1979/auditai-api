@@ -43,70 +43,52 @@ def relatorio():
 @app.get("/auditoria")
 def auditar_transacoes():
     try:
+        import json
+        with open("regras_compliance_audivus.json", "r", encoding="utf-8") as f:
+            regras = json.load(f)
+
         df = pd.read_sql("""
             SELECT id, cliente, valor_transacao, data, status, justificativa
             FROM transacoes
             WHERE data >= NOW() - INTERVAL '30 days'
         """, engine)
+        df['data'] = pd.to_datetime(df['data'])
 
-        def gerar_violacoes(row):
+        def aplicar_regras_compliance(row):
             violacoes = []
+            for regra in regras:
+                campo = regra["campo_relevante"]
+                condicao = regra["condicao"]
 
-            if row['valor_transacao'] > 10000 and not row['justificativa']:
-                violacoes.append({
-                    "codigo": "V002",
-                    "tipo": "Justificativa Ausente",
-                    "descricao": "Valor elevado sem justificativa cadastrada",
-                    "explicacao": "Transações acima de R$10.000 exigem justificativa para fins de auditoria e conformidade.",
-                    "recomendacao": "Inserir uma justificativa válida para manter a rastreabilidade e aderência à LGPD (Art. 6º - Princípio da prestação de contas)."
-                })
+                if campo == "valor_transacao" and condicao == "> 10000":
+                    if row.get("valor_transacao", 0) > 10000 and not row.get("justificativa"):
+                        violacoes.append(regra)
 
-            if row['status'] == 'Pendente' and (datetime.now() - row['data']).days > 7:
-                violacoes.append({
-                    "codigo": "V001",
-                    "tipo": "Prazo",
-                    "descricao": "Status 'Pendente' há mais de 7 dias",
-                    "explicacao": "Transações pendentes por muito tempo podem indicar atrasos no processo de aprovação, riscos operacionais ou falha de atualização de sistema.",
-                    "recomendacao": "Revisar com a equipe financeira ou atualizar o status, mantendo os dados em conformidade com boas práticas de controle."
-                })
+                elif campo == "status/data" and condicao == "pendente > 7 dias":
+                    if row.get("status") == "Pendente":
+                        data = pd.to_datetime(row.get("data"))
+                        if (datetime.now() - data).days > 7:
+                            violacoes.append(regra)
+
+                elif campo == "cliente" and condicao == "cliente estrangeiro":
+                    if "Ltd" in row.get("cliente", "") or "Inc" in row.get("cliente", ""):
+                        violacoes.append(regra)
+
+                elif campo == "justificativa" and condicao == "contém dado pessoal":
+                    just = row.get("justificativa", "").lower()
+                    if any(term in just for term in ["cpf", "nome", "rg", "email"]):
+                        violacoes.append(regra)
 
             return violacoes
 
-        df['data'] = pd.to_datetime(df['data'])
-        df['violacoes_detalhadas'] = df.apply(gerar_violacoes, axis=1)
+        df["violacoes_compliance"] = df.apply(lambda row: aplicar_regras_compliance(row), axis=1)
 
-        modelo_ia = IsolationForest(contamination=0.05)
-        valores = df[['valor_transacao']].fillna(0)
-        df['anomalia_flag'] = modelo_ia.fit_predict(valores)
-
-        def gerar_anomalia(row):
-            return {
-                "presente": row['anomalia_flag'] == -1,
-                "descricao": "Esta transação apresentou padrão fora do comum." if row['anomalia_flag'] == -1 else "Esta transação não apresentou padrões anômalos segundo o modelo de IA.",
-                "metodologia": "Detecção com algoritmo Isolation Forest sobre o histórico recente.",
-                "observacao": "Mesmo sem anomalias matemáticas, violação de regras de compliance ainda pode existir."
-            }
-
-        df['anomalia_detalhada'] = df.apply(gerar_anomalia, axis=1)
-
-        def gerar_conformidade_lgpd(row):
-            return {
-                "risco_dados": "Baixo",
-                "observacao": "Sem dados sensíveis identificáveis nesta transação.",
-                "boas_praticas": [
-                    "Evite armazenar CPF, RG ou dados pessoais diretamente.",
-                    "Inclua justificativas em transações de valor para fins de auditoria legal.",
-                    "Mantenha dados atualizados e com finalidade clara, conforme Art. 6 da LGPD."
-                ]
-            }
-
-        df['conformidade_lgpd'] = df.apply(gerar_conformidade_lgpd, axis=1)
-
-        resultado = df[['id', 'cliente', 'valor_transacao', 'data', 'status', 'justificativa', 'violacoes_detalhadas', 'anomalia_detalhada', 'conformidade_lgpd']]
+        resultado = df[["id", "cliente", "valor_transacao", "data", "status", "justificativa", "violacoes_compliance"]]
         return {"auditorias": resultado.to_dict(orient="records")}
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
 
 
 @app.post("/transacao")
