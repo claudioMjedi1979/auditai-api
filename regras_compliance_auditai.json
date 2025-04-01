@@ -1,0 +1,38 @@
+[
+    {
+        "codigo": "R001",
+        "origem": "Receita Federal",
+        "descricao": "Transações acima de R$ 10.000 devem possuir justificativa e identificação do favorecido.",
+        "campo_relevante": "valor_transacao",
+        "condicao": "> 10000",
+        "acao_recomendada": "Solicitar justificativa e CNPJ do fornecedor/cliente.",
+        "base_legal": "Instrução Normativa RFB nº 1.234/2023, art. 5º"
+    },
+    {
+        "codigo": "R002",
+        "origem": "LGPD",
+        "descricao": "Transações com dados pessoais devem ter finalidade explícita e consentimento registrado.",
+        "campo_relevante": "justificativa",
+        "condicao": "contém dado pessoal",
+        "acao_recomendada": "Certificar que os dados pessoais possuem base legal e estão documentados.",
+        "base_legal": "LGPD, Art. 6º - Princípios da finalidade e prestação de contas."
+    },
+    {
+        "codigo": "R003",
+        "origem": "Banco Central",
+        "descricao": "Pagamentos para fornecedores internacionais exigem documentação contratual.",
+        "campo_relevante": "cliente",
+        "condicao": "cliente estrangeiro",
+        "acao_recomendada": "Verificar contrato internacional e comprovante de câmbio.",
+        "base_legal": "Circular Bacen nº 3.691/2013"
+    },
+    {
+        "codigo": "R004",
+        "origem": "Compliance Interno",
+        "descricao": "Transações com status pendente há mais de 7 dias devem ser revisadas.",
+        "campo_relevante": "status/data",
+        "condicao": "pendente > 7 dias",
+        "acao_recomendada": "Intervir com responsável da controladoria para regularização.",
+        "base_legal": "Política interna de compliance - Revisão 2024"
+    }
+]
