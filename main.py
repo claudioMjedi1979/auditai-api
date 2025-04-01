@@ -9,11 +9,8 @@ import os
 from dotenv import load_dotenv
 from typing import Optional
 
-# Carrega variáveis do .env
 load_dotenv()
 DATABASE_URL = os.getenv("DATABASE_URL")
-
-# Cria engine de conexão
 engine = sqlalchemy.create_engine(DATABASE_URL)
 
 app = FastAPI()
@@ -75,7 +72,11 @@ def auditar_transacoes():
                         violacoes.append(regra)
 
                 elif campo == "justificativa" and condicao == "contém dado pessoal":
-                    just = row.get("justificativa", "").lower()
+                    just = row.get("justificativa")
+                    if just and isinstance(just, str):
+                        just = just.lower()
+                    else:
+                        just = ""
                     if any(term in just for term in ["cpf", "nome", "rg", "email"]):
                         violacoes.append(regra)
 
@@ -88,8 +89,6 @@ def auditar_transacoes():
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
-
 
 @app.post("/transacao")
 def inserir_transacao(transacao: Transacao):
