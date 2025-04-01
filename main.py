@@ -9,11 +9,8 @@ import os
 from dotenv import load_dotenv
 from typing import Optional
 
-# Carrega variáveis do .env
 load_dotenv()
 DATABASE_URL = os.getenv("DATABASE_URL")
-
-# Cria engine de conexão
 engine = sqlalchemy.create_engine(DATABASE_URL)
 
 app = FastAPI()
@@ -44,7 +41,7 @@ def relatorio():
 def auditar_transacoes():
     try:
         import json
-        with open("regras_compliance_audivus.json", "r", encoding="utf-8") as f:
+        with open("regras_compliance_auditai.json", "r", encoding="utf-8") as f:
             regras = json.load(f)
 
         df = pd.read_sql("""
@@ -75,7 +72,11 @@ def auditar_transacoes():
                         violacoes.append(regra)
 
                 elif campo == "justificativa" and condicao == "contém dado pessoal":
-                    just = row.get("justificativa", "").lower()
+                    just = row.get("justificativa")
+                    if just and isinstance(just, str):
+                        just = just.lower()
+                    else:
+                        just = ""
                     if any(term in just for term in ["cpf", "nome", "rg", "email"]):
                         violacoes.append(regra)
 
@@ -88,8 +89,6 @@ def auditar_transacoes():
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
-
 
 @app.post("/transacao")
 def inserir_transacao(transacao: Transacao):
@@ -109,4 +108,3 @@ def inserir_transacao(transacao: Transacao):
         return {"mensagem": "Transação inserida com sucesso."}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
