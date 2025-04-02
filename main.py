@@ -46,7 +46,7 @@ def relatorio():
 def auditar_transacoes():
     try:
         import json
-        with open("regras_compliance_audivus.json", "r", encoding="utf-8") as f:
+        with open("regras_compliance_auditai.json", "r", encoding="utf-8") as f:
             regras = json.load(f)
 
         df = pd.read_sql("""
