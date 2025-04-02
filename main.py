@@ -1,11 +1,13 @@
+
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 import pandas as pd
 from datetime import datetime
-from sklearn.ensemble import IsolationForest
 from sqlalchemy import text
 import sqlalchemy
 import os
+import re
+import json
 from dotenv import load_dotenv
 from typing import Optional
 
@@ -25,8 +27,8 @@ class Transacao(BaseModel):
 
 class FeedbackAuditoria(BaseModel):
     id_transacao: int
-    rotulo: str  # 'violacao_confirmada', 'falso_positivo', 'nao_avaliado'
-    observacao: str = ""
+    rotulo: str
+    observacao: Optional[str] = ""
 
 @app.get("/")
 def root():
@@ -37,24 +39,26 @@ def relatorio():
     try:
         query = "SELECT * FROM transacoes ORDER BY data DESC"
         df = pd.read_sql(query, engine)
-        df['data'] = pd.to_datetime(df['data'])
-        return df.to_dict(orient='records')
+        df["data"] = pd.to_datetime(df["data"])
+        return df.to_dict(orient="records")
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/auditoria")
 def auditar_transacoes():
     try:
-        import json
-        with open("regras_compliance_audivus.json", "r", encoding="utf-8") as f:
-            regras = json.load(f)
+        regras = []
+        for arquivo in ["regras_compliance_auditai.json", "regras_compliance_auditai_extensivas.json"]:
+            if os.path.exists(arquivo):
+                with open(arquivo, "r", encoding="utf-8") as f:
+                    regras.extend(json.load(f))
 
         df = pd.read_sql("""
             SELECT id, cliente, valor_transacao, data, status, justificativa
             FROM transacoes
             WHERE data >= NOW() - INTERVAL '30 days'
         """, engine)
-        df['data'] = pd.to_datetime(df['data'])
+        df["data"] = pd.to_datetime(df["data"])
 
         def analisar_justificativa_regex(justificativa: str):
             resultados = []
@@ -69,66 +73,75 @@ def auditar_transacoes():
                 "CNPJ": r"\b\d{2}\.\d{3}\.\d{3}/\d{4}-\d{2}\b"
             }
             for nome, padrao in padroes.items():
-                try:
-                    if re.search(padrao, justificativa, re.IGNORECASE):
-                        resultados.append(f"Dado sensível detectado: {nome}")
-                except Exception:
-                    continue
+                if justificativa and re.search(padrao, justificativa, re.IGNORECASE):
+                    resultados.append(f"Dado sensível detectado: {nome}")
             return resultados
 
-        def verificar_regras_temporais(data_transacao):
+        def regras_temporais(data):
             violacoes = []
-            if data_transacao.hour < 8 or data_transacao.hour >= 18:
+            data_obj = pd.to_datetime(data)
+            if data_obj.hour < 8 or data_obj.hour >= 18:
                 violacoes.append({
-                    "codigo": "RT001",
+                    "codigo": "HOR001",
                     "descricao": "Transação fora do horário comercial",
-                    "origem": "Compliance Interno",
-                    "acao_recomendada": "Verificar motivo da transação fora do expediente",
-                    "base_legal": "Política interna de integridade e acesso"
+                    "origem": "Política interna",
+                    "acao_recomendada": "Revisar transações fora do expediente",
+                    "base_legal": "Controles internos"
                 })
-            if data_transacao.weekday() >= 5:
+            if data_obj.weekday() >= 5:
                 violacoes.append({
-                    "codigo": "RT002",
-                    "descricao": "Transação realizada em final de semana",
-                    "origem": "Compliance Interno",
-                    "acao_recomendada": "Confirmar autorização e motivo da operação",
-                    "base_legal": "Política de conformidade operacional"
+                    "codigo": "HOR002",
+                    "descricao": "Transação realizada no final de semana",
+                    "origem": "Política interna",
+                    "acao_recomendada": "Confirmar autorização da operação",
+                    "base_legal": "Controles internos"
                 })
             return violacoes
 
-        def aplicar_regras_compliance(row):
+        def aplicar_regras(row):
             violacoes = []
+
             for regra in regras:
                 campo = regra.get("campo_relevante", "").lower()
                 condicao = regra.get("condicao", "").lower()
 
-                if "valor_transacao" in condicao and ">" in condicao:
+                if campo == "valor_transacao" and ">" in condicao:
                     try:
                         limite = float(condicao.split(">")[1].split()[0])
-                        if row.get("valor_transacao", 0) > limite and not row.get("justificativa"):
+                        if row["valor_transacao"] > limite and not row["justificativa"]:
                             violacoes.append(regra)
                     except:
                         continue
 
-                if "justificativa" in condicao and "dado pessoal" in condicao:
+                elif campo == "justificativa" and "dado pessoal" in condicao:
                     just = row.get("justificativa", "")
-                    violacoes_regex = analisar_justificativa_regex(just)
-                    if violacoes_regex:
-                        regra["descricao"] += f" ({', '.join(violacoes_regex)})"
+                    resultados = analisar_justificativa_regex(just)
+                    if resultados:
+                        nova_regra = regra.copy()
+                        nova_regra["descricao"] += f" ({', '.join(resultados)})"
+                        violacoes.append(nova_regra)
+
+                elif campo == "cliente" and "estrangeiro" in condicao:
+                    if "ltd" in row.get("cliente", "").lower() or "inc" in row.get("cliente", "").lower():
                         violacoes.append(regra)
 
-                elif campo == "justificativa" and condicao == "contém dado pessoal":
-                    just = row.get("justificativa", "").lower()
-                    if any(term in just for term in ["cpf", "nome", "rg", "email"]):
-                        violacoes.append(regra)
+                elif campo == "status/data" and "pendente" in condicao:
+                    if row.get("status") == "Pendente":
+                        data = pd.to_datetime(row.get("data"))
+                        if (datetime.now() - data).days > 7:
+                            violacoes.append(regra)
 
-                if "final de semana" in condicao or "horário comercial" in condicao:
-                    data_transacao = pd.to_datetime(row.get("data"))
-                    violacoes.extend(verificar_regras_temporais(data_transacao))
+                elif condicao.startswith("condicao_"):
+                    observacao = regra.copy()
+                    observacao["descricao"] += " ⚠️ Regra genérica não aplicada automaticamente"
+                    violacoes.append(observacao)
+
+            # Regras temporais fixas
+            violacoes.extend(regras_temporais(row.get("data")))
 
             return violacoes
 
-        df["violacoes_compliance"] = df.apply(lambda row: aplicar_regras_compliance(row), axis=1)
+        df["violacoes_compliance"] = df.apply(aplicar_regras, axis=1)
         resultado = df[["id", "cliente", "valor_transacao", "data", "status", "justificativa", "violacoes_compliance"]]
         return {"auditorias": resultado.to_dict(orient="records")}
 
@@ -154,3 +167,19 @@ def inserir_transacao(transacao: Transacao):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.post("/rotular_transacao")
+def rotular_transacao(feedback: FeedbackAuditoria):
+    try:
+        query = text("""
+            INSERT INTO feedback_auditoria (id_transacao, rotulo, observacao, data_registro)
+            VALUES (:id_transacao, :rotulo, :observacao, NOW())
+        """)
+        with engine.connect() as connection:
+            connection.execute(query, {
+                "id_transacao": feedback.id_transacao,
+                "rotulo": feedback.rotulo,
+                "observacao": feedback.observacao or ""
+            })
+        return {"mensagem": "Feedback registrado com sucesso."}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
