@@ -1,0 +1,242 @@
+[
+    {
+        "codigo": "BACEN001",
+        "descricao": "Regra BACEN simulada número 1: validação financeira.",
+        "condicao": "condicao_bacen_1",
+        "origem": "BACEN",
+        "acao_recomendada": "Ação corretiva sugerida para BACEN regra 1",
+        "base_legal": "BACEN - Circular 3901"
+    },
+    {
+        "codigo": "BACEN002",
+        "descricao": "Regra BACEN simulada número 2: validação financeira.",
+        "condicao": "condicao_bacen_2",
+        "origem": "BACEN",
+        "acao_recomendada": "Ação corretiva sugerida para BACEN regra 2",
+        "base_legal": "BACEN - Circular 3902"
+    },
+    {
+        "codigo": "BACEN003",
+        "descricao": "Regra BACEN simulada número 3: validação financeira.",
+        "condicao": "condicao_bacen_3",
+        "origem": "BACEN",
+        "acao_recomendada": "Ação corretiva sugerida para BACEN regra 3",
+        "base_legal": "BACEN - Circular 3903"
+    },
+    {
+        "codigo": "BACEN004",
+        "descricao": "Regra BACEN simulada número 4: validação financeira.",
+        "condicao": "condicao_bacen_4",
+        "origem": "BACEN",
+        "acao_recomendada": "Ação corretiva sugerida para BACEN regra 4",
+        "base_legal": "BACEN - Circular 3904"
+    },
+    {
+        "codigo": "BACEN005",
+        "descricao": "Regra BACEN simulada número 5: validação financeira.",
+        "condicao": "condicao_bacen_5",
+        "origem": "BACEN",
+        "acao_recomendada": "Ação corretiva sugerida para BACEN regra 5",
+        "base_legal": "BACEN - Circular 3905"
+    },
+    {
+        "codigo": "BACEN006",
+        "descricao": "Regra BACEN simulada número 6: validação financeira.",
+        "condicao": "condicao_bacen_6",
+        "origem": "BACEN",
+        "acao_recomendada": "Ação corretiva sugerida para BACEN regra 6",
+        "base_legal": "BACEN - Circular 3906"
+    },
+    {
+        "codigo": "BACEN007",
+        "descricao": "Regra BACEN simulada número 7: validação financeira.",
+        "condicao": "condicao_bacen_7",
+        "origem": "BACEN",
+        "acao_recomendada": "Ação corretiva sugerida para BACEN regra 7",
+        "base_legal": "BACEN - Circular 3907"
+    },
+    {
+        "codigo": "BACEN008",
+        "descricao": "Regra BACEN simulada número 8: validação financeira.",
+        "condicao": "condicao_bacen_8",
+        "origem": "BACEN",
+        "acao_recomendada": "Ação corretiva sugerida para BACEN regra 8",
+        "base_legal": "BACEN - Circular 3908"
+    },
+    {
+        "codigo": "BACEN009",
+        "descricao": "Regra BACEN simulada número 9: validação financeira.",
+        "condicao": "condicao_bacen_9",
+        "origem": "BACEN",
+        "acao_recomendada": "Ação corretiva sugerida para BACEN regra 9",
+        "base_legal": "BACEN - Circular 3909"
+    },
+    {
+        "codigo": "BACEN010",
+        "descricao": "Regra BACEN simulada número 10: validação financeira.",
+        "condicao": "condicao_bacen_10",
+        "origem": "BACEN",
+        "acao_recomendada": "Ação corretiva sugerida para BACEN regra 10",
+        "base_legal": "BACEN - Circular 3910"
+    },
+    {
+        "codigo": "RECEITA001",
+        "descricao": "Regra Receita Federal simulada número 1: validação fiscal.",
+        "condicao": "condicao_receita_1",
+        "origem": "Receita Federal",
+        "acao_recomendada": "Ação recomendada para regra Receita 1",
+        "base_legal": "IN Receita 1201/2010"
+    },
+    {
+        "codigo": "RECEITA002",
+        "descricao": "Regra Receita Federal simulada número 2: validação fiscal.",
+        "condicao": "condicao_receita_2",
+        "origem": "Receita Federal",
+        "acao_recomendada": "Ação recomendada para regra Receita 2",
+        "base_legal": "IN Receita 1202/2010"
+    },
+    {
+        "codigo": "RECEITA003",
+        "descricao": "Regra Receita Federal simulada número 3: validação fiscal.",
+        "condicao": "condicao_receita_3",
+        "origem": "Receita Federal",
+        "acao_recomendada": "Ação recomendada para regra Receita 3",
+        "base_legal": "IN Receita 1203/2010"
+    },
+    {
+        "codigo": "RECEITA004",
+        "descricao": "Regra Receita Federal simulada número 4: validação fiscal.",
+        "condicao": "condicao_receita_4",
+        "origem": "Receita Federal",
+        "acao_recomendada": "Ação recomendada para regra Receita 4",
+        "base_legal": "IN Receita 1204/2010"
+    },
+    {
+        "codigo": "RECEITA005",
+        "descricao": "Regra Receita Federal simulada número 5: validação fiscal.",
+        "condicao": "condicao_receita_5",
+        "origem": "Receita Federal",
+        "acao_recomendada": "Ação recomendada para regra Receita 5",
+        "base_legal": "IN Receita 1205/2010"
+    },
+    {
+        "codigo": "RECEITA006",
+        "descricao": "Regra Receita Federal simulada número 6: validação fiscal.",
+        "condicao": "condicao_receita_6",
+        "origem": "Receita Federal",
+        "acao_recomendada": "Ação recomendada para regra Receita 6",
+        "base_legal": "IN Receita 1206/2010"
+    },
+    {
+        "codigo": "RECEITA007",
+        "descricao": "Regra Receita Federal simulada número 7: validação fiscal.",
+        "condicao": "condicao_receita_7",
+        "origem": "Receita Federal",
+        "acao_recomendada": "Ação recomendada para regra Receita 7",
+        "base_legal": "IN Receita 1207/2010"
+    },
+    {
+        "codigo": "RECEITA008",
+        "descricao": "Regra Receita Federal simulada número 8: validação fiscal.",
+        "condicao": "condicao_receita_8",
+        "origem": "Receita Federal",
+        "acao_recomendada": "Ação recomendada para regra Receita 8",
+        "base_legal": "IN Receita 1208/2010"
+    },
+    {
+        "codigo": "RECEITA009",
+        "descricao": "Regra Receita Federal simulada número 9: validação fiscal.",
+        "condicao": "condicao_receita_9",
+        "origem": "Receita Federal",
+        "acao_recomendada": "Ação recomendada para regra Receita 9",
+        "base_legal": "IN Receita 1209/2010"
+    },
+    {
+        "codigo": "RECEITA010",
+        "descricao": "Regra Receita Federal simulada número 10: validação fiscal.",
+        "condicao": "condicao_receita_10",
+        "origem": "Receita Federal",
+        "acao_recomendada": "Ação recomendada para regra Receita 10",
+        "base_legal": "IN Receita 1210/2010"
+    },
+    {
+        "codigo": "LGPD001",
+        "descricao": "Regra LGPD simulada número 1: proteção de dados pessoais.",
+        "condicao": "condicao_lgpd_1",
+        "origem": "LGPD",
+        "acao_recomendada": "Ação preventiva para LGPD 1",
+        "base_legal": "LGPD - Artigo 1"
+    },
+    {
+        "codigo": "LGPD002",
+        "descricao": "Regra LGPD simulada número 2: proteção de dados pessoais.",
+        "condicao": "condicao_lgpd_2",
+        "origem": "LGPD",
+        "acao_recomendada": "Ação preventiva para LGPD 2",
+        "base_legal": "LGPD - Artigo 2"
+    },
+    {
+        "codigo": "LGPD003",
+        "descricao": "Regra LGPD simulada número 3: proteção de dados pessoais.",
+        "condicao": "condicao_lgpd_3",
+        "origem": "LGPD",
+        "acao_recomendada": "Ação preventiva para LGPD 3",
+        "base_legal": "LGPD - Artigo 3"
+    },
+    {
+        "codigo": "LGPD004",
+        "descricao": "Regra LGPD simulada número 4: proteção de dados pessoais.",
+        "condicao": "condicao_lgpd_4",
+        "origem": "LGPD",
+        "acao_recomendada": "Ação preventiva para LGPD 4",
+        "base_legal": "LGPD - Artigo 4"
+    },
+    {
+        "codigo": "LGPD005",
+        "descricao": "Regra LGPD simulada número 5: proteção de dados pessoais.",
+        "condicao": "condicao_lgpd_5",
+        "origem": "LGPD",
+        "acao_recomendada": "Ação preventiva para LGPD 5",
+        "base_legal": "LGPD - Artigo 5"
+    },
+    {
+        "codigo": "LGPD006",
+        "descricao": "Regra LGPD simulada número 6: proteção de dados pessoais.",
+        "condicao": "condicao_lgpd_6",
+        "origem": "LGPD",
+        "acao_recomendada": "Ação preventiva para LGPD 6",
+        "base_legal": "LGPD - Artigo 6"
+    },
+    {
+        "codigo": "LGPD007",
+        "descricao": "Regra LGPD simulada número 7: proteção de dados pessoais.",
+        "condicao": "condicao_lgpd_7",
+        "origem": "LGPD",
+        "acao_recomendada": "Ação preventiva para LGPD 7",
+        "base_legal": "LGPD - Artigo 7"
+    },
+    {
+        "codigo": "LGPD008",
+        "descricao": "Regra LGPD simulada número 8: proteção de dados pessoais.",
+        "condicao": "condicao_lgpd_8",
+        "origem": "LGPD",
+        "acao_recomendada": "Ação preventiva para LGPD 8",
+        "base_legal": "LGPD - Artigo 8"
+    },
+    {
+        "codigo": "LGPD009",
+        "descricao": "Regra LGPD simulada número 9: proteção de dados pessoais.",
+        "condicao": "condicao_lgpd_9",
+        "origem": "LGPD",
+        "acao_recomendada": "Ação preventiva para LGPD 9",
+        "base_legal": "LGPD - Artigo 9"
+    },
+    {
+        "codigo": "LGPD010",
+        "descricao": "Regra LGPD simulada número 10: proteção de dados pessoais.",
+        "condicao": "condicao_lgpd_10",
+        "origem": "LGPD",
+        "acao_recomendada": "Ação preventiva para LGPD 10",
+        "base_legal": "LGPD - Artigo 10"
+    }
+]
