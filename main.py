@@ -32,6 +32,11 @@ class FeedbackAuditoria(BaseModel):
     rotulo: str
     observacao: Optional[str] = ""
 
+class TransacaoIA(BaseModel):
+    valor_transacao: float
+    data: str
+    justificativa: Optional[str] = None
+
 @app.get("/")
 def root():
     return {"message": "AuditAI API online"}
@@ -102,11 +107,9 @@ def auditar_transacoes():
 
         def aplicar_regras(row):
             violacoes = []
-
             for regra in regras:
                 campo = regra.get("campo_relevante", "").lower()
                 condicao = regra.get("condicao", "").lower()
-
                 if campo == "valor_transacao" and ">" in condicao:
                     try:
                         limite = float(condicao.split(">")[1].split()[0])
@@ -114,7 +117,6 @@ def auditar_transacoes():
                             violacoes.append(regra)
                     except:
                         continue
-
                 elif campo == "justificativa" and "dado pessoal" in condicao:
                     just = row.get("justificativa", "")
                     resultados = analisar_justificativa_regex(just)
@@ -122,30 +124,24 @@ def auditar_transacoes():
                         nova_regra = regra.copy()
                         nova_regra["descricao"] += f" ({', '.join(resultados)})"
                         violacoes.append(nova_regra)
-
                 elif campo == "cliente" and "estrangeiro" in condicao:
                     if "ltd" in row.get("cliente", "").lower() or "inc" in row.get("cliente", "").lower():
                         violacoes.append(regra)
-
                 elif campo == "status/data" and "pendente" in condicao:
                     if row.get("status") == "Pendente":
                         data = pd.to_datetime(row.get("data"))
                         if (datetime.now() - data).days > 7:
                             violacoes.append(regra)
-
                 elif condicao.startswith("condicao_"):
                     observacao = regra.copy()
                     observacao["descricao"] += " ⚠️ Regra genérica não aplicada automaticamente"
                     violacoes.append(observacao)
-
             violacoes.extend(regras_temporais(row.get("data")))
-
             return violacoes
 
         df["violacoes_compliance"] = df.apply(aplicar_regras, axis=1)
         resultado = df[["id", "cliente", "valor_transacao", "data", "status", "justificativa", "violacoes_compliance"]]
         return {"auditorias": resultado.to_dict(orient="records")}
-
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -157,13 +153,7 @@ def inserir_transacao(transacao: Transacao):
             VALUES (:cliente, :valor_transacao, :data, :status, :justificativa)
         """)
         with engine.connect() as connection:
-            connection.execute(query, {
-                "cliente": transacao.cliente,
-                "valor_transacao": transacao.valor_transacao,
-                "data": transacao.data,
-                "status": transacao.status,
-                "justificativa": transacao.justificativa
-            })
+            connection.execute(query, transacao.dict())
         return {"mensagem": "Transação inserida com sucesso."}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -176,11 +166,7 @@ def rotular_transacao(feedback: FeedbackAuditoria):
             VALUES (:id_transacao, :rotulo, :observacao, NOW())
         """)
         with engine.connect() as connection:
-            connection.execute(query, {
-                "id_transacao": feedback.id_transacao,
-                "rotulo": feedback.rotulo,
-                "observacao": feedback.observacao or ""
-            })
+            connection.execute(query, feedback.dict())
         return {"mensagem": "Feedback registrado com sucesso."}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -190,23 +176,34 @@ def treinar_modelo_ia():
     try:
         df = pd.read_sql("SELECT * FROM transacoes", engine)
         feedbacks = pd.read_sql("SELECT * FROM feedback_auditoria", engine)
-
         df = pd.merge(df, feedbacks, left_on="id", right_on="id_transacao", how="inner")
-
         df["data"] = pd.to_datetime(df["data"])
         df["dia_semana"] = df["data"].dt.weekday
         df["hora"] = df["data"].dt.hour
         df["tem_justificativa"] = df["justificativa"].notna().astype(int)
-
-        colunas = ["valor_transacao", "dia_semana", "hora", "tem_justificativa"]
-        X = df[colunas]
+        X = df[["valor_transacao", "dia_semana", "hora", "tem_justificativa"]]
         y = df["rotulo"]
-
         modelo = RandomForestClassifier(n_estimators=100, random_state=42)
         modelo.fit(X, y)
-
         joblib.dump(modelo, "modelo_auditai.pkl")
-
         return {"mensagem": "Modelo treinado e salvo com sucesso.", "quantidade_amostras": len(df)}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/ia_prever")
+def prever_ia(transacao: TransacaoIA):
+    try:
+        if not os.path.exists("modelo_auditai.pkl"):
+            raise HTTPException(status_code=400, detail="Modelo IA não treinado.")
+        modelo = joblib.load("modelo_auditai.pkl")
+        data = pd.to_datetime(transacao.data)
+        entrada = pd.DataFrame([{
+            "valor_transacao": transacao.valor_transacao,
+            "dia_semana": data.weekday(),
+            "hora": data.hour,
+            "tem_justificativa": int(bool(transacao.justificativa))
+        }])
+        predicao = modelo.predict(entrada)[0]
+        return {"previsao": predicao}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
