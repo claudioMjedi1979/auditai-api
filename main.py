@@ -10,6 +10,8 @@ import re
 import json
 from dotenv import load_dotenv
 from typing import Optional
+import joblib
+from sklearn.ensemble import RandomForestClassifier
 
 load_dotenv()
 DATABASE_URL = os.getenv("DATABASE_URL")
@@ -136,7 +138,6 @@ def auditar_transacoes():
                     observacao["descricao"] += " ⚠️ Regra genérica não aplicada automaticamente"
                     violacoes.append(observacao)
 
-            # Regras temporais fixas
             violacoes.extend(regras_temporais(row.get("data")))
 
             return violacoes
@@ -181,5 +182,31 @@ def rotular_transacao(feedback: FeedbackAuditoria):
                 "observacao": feedback.observacao or ""
             })
         return {"mensagem": "Feedback registrado com sucesso."}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/ia_auditoria")
+def treinar_modelo_ia():
+    try:
+        df = pd.read_sql("SELECT * FROM transacoes", engine)
+        feedbacks = pd.read_sql("SELECT * FROM feedback_auditoria", engine)
+
+        df = pd.merge(df, feedbacks, left_on="id", right_on="id_transacao", how="inner")
+
+        df["data"] = pd.to_datetime(df["data"])
+        df["dia_semana"] = df["data"].dt.weekday
+        df["hora"] = df["data"].dt.hour
+        df["tem_justificativa"] = df["justificativa"].notna().astype(int)
+
+        colunas = ["valor_transacao", "dia_semana", "hora", "tem_justificativa"]
+        X = df[colunas]
+        y = df["rotulo"]
+
+        modelo = RandomForestClassifier(n_estimators=100, random_state=42)
+        modelo.fit(X, y)
+
+        joblib.dump(modelo, "modelo_auditai.pkl")
+
+        return {"mensagem": "Modelo treinado e salvo com sucesso.", "quantidade_amostras": len(df)}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
