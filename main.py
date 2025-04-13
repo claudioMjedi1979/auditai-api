@@ -252,11 +252,14 @@ def cadastrar_risco(risco: Risco):
             INSERT INTO riscos (titulo, descricao, categoria, probabilidade, impacto, status)
             VALUES (:titulo, :descricao, :categoria, :probabilidade, :impacto, :status)
         """)
+        # Garante que a transação será efetivada com commit()
         with engine.connect() as conn:
-            conn.execute(query, risco.dict())
+            with conn.begin():  # <- este bloco garante o commit automático
+                conn.execute(query, risco.dict())
         return {"mensagem": "Risco cadastrado com sucesso."}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=f"Erro ao cadastrar risco: {str(e)}")
+
 
 @app.get("/riscos")
 def listar_riscos():
