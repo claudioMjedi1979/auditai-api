@@ -1,4 +1,3 @@
-
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 import pandas as pd
@@ -36,6 +35,22 @@ class TransacaoIA(BaseModel):
     valor_transacao: float
     data: str
     justificativa: Optional[str] = None
+
+class Risco(BaseModel):
+    titulo: str
+    descricao: str
+    categoria: str
+    probabilidade: str
+    impacto: str
+    status: str
+
+class Controle(BaseModel):
+    id_risco: int
+    nome: str
+    tipo: str
+    descricao: str
+    eficacia: str
+    responsavel: str
 
 @app.get("/")
 def root():
@@ -161,7 +176,6 @@ def inserir_transacao(transacao: Transacao):
 @app.post("/rotular_transacao")
 def rotular_transacao(feedback: FeedbackAuditoria):
     try:
-        # 1. Inserir o feedback normalmente
         insert_query = text("""
             INSERT INTO feedback_auditoria (id_transacao, rotulo, observacao, data_registro)
             VALUES (:id_transacao, :rotulo, :observacao, NOW())
@@ -173,7 +187,6 @@ def rotular_transacao(feedback: FeedbackAuditoria):
                 "observacao": feedback.observacao or ""
             })
 
-        # 2. Recarregar dados com feedbacks
         df_transacoes = pd.read_sql("SELECT * FROM transacoes", engine)
         df_feedbacks = pd.read_sql("SELECT * FROM feedback_auditoria", engine)
         df = pd.merge(df_transacoes, df_feedbacks, left_on="id", right_on="id_transacao", how="inner")
@@ -183,8 +196,7 @@ def rotular_transacao(feedback: FeedbackAuditoria):
         df["hora"] = df["data"].dt.hour
         df["tem_justificativa"] = df["justificativa"].notna().astype(int)
 
-        colunas = ["valor_transacao", "dia_semana", "hora", "tem_justificativa"]
-        X = df[colunas]
+        X = df[["valor_transacao", "dia_semana", "hora", "tem_justificativa"]]
         y = df["rotulo"]
 
         modelo = RandomForestClassifier(n_estimators=100, random_state=42)
@@ -192,15 +204,9 @@ def rotular_transacao(feedback: FeedbackAuditoria):
 
         joblib.dump(modelo, "modelo_auditai.pkl")
 
-        return {
-            "mensagem": "Feedback salvo e modelo reentreinado com sucesso.",
-            "feedback_id": feedback.id_transacao,
-            "amostras_usadas": len(df)
-        }
-
+        return {"mensagem": "Feedback salvo e modelo reentreinado com sucesso.", "feedback_id": feedback.id_transacao, "amostras_usadas": len(df)}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
 
 @app.get("/ia_auditoria")
 def treinar_modelo_ia():
@@ -236,5 +242,47 @@ def prever_ia(transacao: TransacaoIA):
         }])
         predicao = modelo.predict(entrada)[0]
         return {"previsao": predicao}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/risco")
+def cadastrar_risco(risco: Risco):
+    try:
+        query = text("""
+            INSERT INTO riscos (titulo, descricao, categoria, probabilidade, impacto, status)
+            VALUES (:titulo, :descricao, :categoria, :probabilidade, :impacto, :status)
+        """)
+        with engine.connect() as conn:
+            conn.execute(query, risco.dict())
+        return {"mensagem": "Risco cadastrado com sucesso."}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/riscos")
+def listar_riscos():
+    try:
+        df = pd.read_sql("SELECT * FROM riscos", engine)
+        return df.to_dict(orient="records")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/controle")
+def cadastrar_controle(controle: Controle):
+    try:
+        query = text("""
+            INSERT INTO controles (id_risco, nome, tipo, descricao, eficacia, responsavel)
+            VALUES (:id_risco, :nome, :tipo, :descricao, :eficacia, :responsavel)
+        """)
+        with engine.connect() as conn:
+            conn.execute(query, controle.dict())
+        return {"mensagem": "Controle cadastrado com sucesso."}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/controles")
+def listar_controles():
+    try:
+        df = pd.read_sql("SELECT * FROM controles", engine)
+        return df.to_dict(orient="records")
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
